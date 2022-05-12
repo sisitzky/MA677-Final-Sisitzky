@@ -1,0 +1,109 @@
+---
+title: "Final Project MA677 Sisitzky"
+author: "Andrew Sisitzky"
+date: "5/12/2022"
+output: pdf_document
+---
+
+```{r, include=FALSE}
+library(readxl)
+library(reshape2)
+library(ggplot2)
+library(fitdistrplus)
+library(dplyr)
+library(gridExtra)
+```
+
+__Now consider the data in the spreadsheet file _Illinois rain 1960-1964.xlxs_ which reports amounts of precipitation during storms in Illinois from 1960 to 1964. These data were gathered in a study of the natural variability of rainfall. The rainfall from summer storms was measured by a network of rain gauges in southern Illinois for the years 1960-1964 (Changnon and Huff, 1967). The average amount of rainfall (in inches) from each storm, by year, is contained in the spreadsheet.__
+
+
+```{r, include=FALSE}
+IllinoisOrig <- read_excel("Illinois_rain_1960-1964(2).xlsx")
+Illinois <- melt(IllinoisOrig, na.rm = TRUE)
+```
+
+__Use the data to identify the distribution of rainfall produced by the storms in southern Illinois. Estimate the parameters of the distribution using MLE. Prepare a discussion of your estimation, including how confident you are about your identification of the distribution and the accuracy of your parameter estimates.__
+
+
+```{r, echo=FALSE}
+ggplot(Illinois, aes(x = value)) +
+  geom_density()
+
+ggplot(Illinois, aes(x = value, fill = variable)) +
+  geom_density(alpha=.15)
+```
+
+```{r, include=FALSE}
+fit.weibull <- fitdist(Illinois$value, "weibull")
+fit.gamma <- fitdist(Illinois$value, "gamma")
+```
+
+```{r, echo=FALSE}
+par(mfrow=c(2,2))
+denscomp(list(fit.weibull, fit.gamma),legendtext=c("Weibull","Gamma"))
+qqcomp(list(fit.weibull, fit.gamma),legendtext=c("Weibull","Gamma"))
+cdfcomp(list(fit.weibull, fit.gamma),legendtext=c("Weibull","Gamma"))
+ppcomp(list(fit.weibull, fit.gamma),legendtext=c("Weibull", "Gamma"))
+```
+
+__Estimating Parameters of Gamma Dist__
+
+```{r}
+mledist(Illinois$value, "gamma")$estimate
+```
+
+
+__Using this distribution, identify wet years and dry years. Are the wet years wet because there were more storms, because individual storms produced more rain, or for both of these reasons?__
+
+```{r, include=FALSE}
+Illinois1960 <- Illinois %>% 
+                  filter(variable == "1960")
+Illinois1961 <- Illinois %>% 
+                  filter(variable == "1961")
+Illinois1962 <- Illinois %>% 
+                  filter(variable == "1962")
+Illinois1963 <- Illinois %>% 
+                  filter(variable == "1963")
+Illinois1964 <- Illinois %>% 
+                  filter(variable == "1964")
+```
+
+```{r, echo=FALSE}
+p1 <- ggplot(Illinois, aes(x = value)) +
+  geom_density() +
+  geom_density(data = Illinois1960, col = "red") +
+  ggtitle("1960 vs Total Dist")
+
+p2 <- ggplot(Illinois, aes(x = value)) +
+  geom_density() +
+  geom_density(data = Illinois1961, col = "red") +
+   ggtitle("1961 vs Total Dist")
+
+p3 <- ggplot(Illinois, aes(x = value)) +
+  geom_density() +
+  geom_density(data = Illinois1962, col = "red") +
+   ggtitle("1962 vs Total Dist")
+
+p4 <- ggplot(Illinois, aes(x = value)) +
+  geom_density() +
+  geom_density(data = Illinois1963, col = "red") +
+   ggtitle("1963 vs Total Dist")
+
+p5 <- ggplot(Illinois, aes(x = value)) +
+  geom_density() +
+  geom_density(data = Illinois1964, col = "red") +
+   ggtitle("1964 vs Total Dist")
+
+grid.arrange(p1, p2, p3, p4, p5, nrow = 2)
+```
+
+```{r}
+Illinois %>%
+  group_by(variable) %>%
+  summarise(Freq = sum(value))
+```
+
+
+__To what extent do you believe the results of your analysis are generalizable? What do you think the next steps would be after the analysis? An article by Floyd Huff, one of the authors of the 1967 report is included.__
+
+I do not believe that the results of this analysis are generalizable, as we are only looking at a small period of time 60 years ago. Next steps of this analysis would be to gather more recent data and see if this distribution holds true today.
